@@ -11,6 +11,8 @@ import javax.swing.UIManager;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 /**
  * Jendela utama aplikasi: menggabungkan ringkasan, formulir input, dan tabel transaksi.
@@ -25,7 +27,7 @@ public class MainFrame extends JFrame {
         super("Aplikasi Pencatatan Keuangan - Uang Masuk & Uang Keluar");
         this.bukuKas = bukuKas;
 
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setMinimumSize(new Dimension(760, 560));
         setLocationRelativeTo(null);
 
@@ -49,6 +51,13 @@ public class MainFrame extends JFrame {
 
         bukuKas.tambahPendengar(this::segarkanTampilan);
         segarkanTampilan(bukuKas);
+
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent peristiwa) {
+                tutupAplikasi();
+            }
+        });
     }
 
     private void segarkanTampilan(BukuKas bukuKas) {
@@ -57,16 +66,33 @@ public class MainFrame extends JFrame {
     }
 
     /**
-     * Menjalankan aplikasi pada event dispatch thread dengan tampilan bawaan sistem.
+     * Menutup jendela, menutup lapisan penyimpanan data, lalu mengakhiri aplikasi.
+     */
+    private void tutupAplikasi() {
+        try {
+            bukuKas.tutup();
+        } finally {
+            dispose();
+            System.exit(0);
+        }
+    }
+
+    /**
+     * Menyusun dan menampilkan jendela utama pada event dispatch thread
+     * memakai tampilan bawaan sistem.
      */
     public static void jalankan(BukuKas bukuKas) {
-        SwingUtilities.invokeLater(() -> {
-            try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (Exception ignored) {
-                // Tampilan bawaan Java tetap dipakai bila tema sistem tidak tersedia.
-            }
-            new MainFrame(bukuKas).setVisible(true);
-        });
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                try {
+                    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                } catch (Exception ignored) {
+                    // Tampilan bawaan Java tetap dipakai bila tema sistem tidak tersedia.
+                }
+                new MainFrame(bukuKas).setVisible(true);
+            });
+        } catch (Exception ex) {
+            throw new IllegalStateException("Gagal menjalankan jendela utama aplikasi.", ex);
+        }
     }
 }

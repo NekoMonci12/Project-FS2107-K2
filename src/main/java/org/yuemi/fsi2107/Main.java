@@ -1,18 +1,26 @@
 package org.yuemi.fsi2107;
 
 import org.yuemi.fsi2107.service.BukuKas;
+import org.yuemi.fsi2107.storage.KonfigurasiAplikasi;
+import org.yuemi.fsi2107.storage.PabrikPenyimpanan;
+import org.yuemi.fsi2107.storage.Penyimpanan;
 import org.yuemi.fsi2107.ui.MainFrame;
 
 /**
  * Titik masuk aplikasi pencatatan keuangan.
  *
- * <p>Seluruh data hanya disimpan di memori selama aplikasi berjalan; tidak ada
- * penyimpanan ke basis data maupun berkas.</p>
+ * <p>Data transaksi disimpan pada basis data SQLite secara bawaan, atau pada
+ * MySQL bila dipilih melalui {@code config.properties}.</p>
  */
 public class Main {
 
     public static void main(String[] args) {
-        BukuKas bukuKas = new BukuKas();
+        KonfigurasiAplikasi konfigurasi = KonfigurasiAplikasi.muat();
+        Penyimpanan penyimpanan = PabrikPenyimpanan.create(konfigurasi);
+        BukuKas bukuKas = new BukuKas(penyimpanan);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(bukuKas::tutup, "penutup-penyimpanan"));
+
         MainFrame.jalankan(bukuKas);
     }
 }

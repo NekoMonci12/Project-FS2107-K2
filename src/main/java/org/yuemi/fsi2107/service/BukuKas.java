@@ -3,7 +3,9 @@ package org.yuemi.fsi2107.service;
 import org.yuemi.fsi2107.model.JenisTransaksi;
 import org.yuemi.fsi2107.model.Kategori;
 import org.yuemi.fsi2107.model.Transaksi;
+import org.yuemi.fsi2107.storage.Penyimpanan;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -13,12 +15,27 @@ import java.util.function.Consumer;
 /**
  * Buku kas: menyimpan seluruh transaksi selama aplikasi berjalan
  * dan menghitung ringkasan keuangan.
+ *
+ * <p>Setiap transaksi yang ditambahkan atau dihapus langsung disimpan ke
+ * {@link Penyimpanan}, sehingga data tetap tersedia setelah aplikasi
+ * ditutup. Daftar di memori dipakai untuk menyusun ringkasan dan tabel.</p>
  */
 public class BukuKas {
 
     private final List<Transaksi> daftarTransaksi = new ArrayList<>();
     private final List<Consumer<BukuKas>> pendengar = new ArrayList<>();
-    private long idBerikutnya = 1L;
+    private final Penyimpanan penyimpanan;
+
+    /**
+     * Menyusun buku kas dan memuat seluruh transaksi yang sudah tersimpan.
+     *
+     * @param penyimpanan lapisan penyimpanan data
+     */
+    public BukuKas(Penyimpanan penyimpanan) {
+        this.penyimpanan = Objects.requireNonNull(penyimpanan, "penyimpanan tidak boleh null");
+        this.penyimpanan.siapkan();
+        muatDariPenyimpanan();
+    }
 
     /**
      * Menambahkan transaksi baru lalu memberi tahu seluruh pendengar.
@@ -34,7 +51,7 @@ public class BukuKas {
             throw new IllegalArgumentException("Nominal harus lebih besar dari nol");
         }
 
-        Transaksi transaksi = new Transaksi(idBerikutnya++, jenis, kategori, deskripsi, nominal);
+        Transaksi transaksi = penyimpanan.simpan(jenis, kategori, deskripsi, nominal, LocalDateTime.now());
         daftarTransaksi.add(transaksi);
         beriTahuPendengar();
         return transaksi;
@@ -44,11 +61,20 @@ public class BukuKas {
      * Menghapus transaksi berdasarkan id. Mengembalikan {@code true} bila ada yang terhapus.
      */
     public boolean hapusTransaksi(long id) {
-        boolean terhapus = daftarTransaksi.removeIf(transaksi -> transaksi.getId() == id);
+        boolean terhapus = penyimpanan.hapus(id);
         if (terhapus) {
+            daftarTransaksi.removeIf(transaksi -> transaksi.getId() == id);
             beriTahuPendengar();
         }
         return terhapus;
+    }
+
+    /**
+     * Mengisi daftar transaksi dari penyimpanan.
+     */
+    private void muatDariPenyimpanan() {
+        daftarTransaksi.clear();
+        daftarTransaksi.addAll(penyimpanan.muatSemua());
     }
 
     public List<Transaksi> getDaftarTransaksi() {
@@ -79,6 +105,13 @@ public class BukuKas {
 
     public void tambahPendengar(Consumer<BukuKas> pendengarBaru) {
         pendengar.add(Objects.requireNonNull(pendengarBaru));
+    }
+
+    /**
+     * Menutup lapisan penyimpanan data.
+     */
+    public void tutup() {
+        penyimpanan.close();
     }
 
     private void beriTahuPendengar() {
