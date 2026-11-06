@@ -56,6 +56,17 @@ public abstract class Profile {
     }
 
     /**
+     * Menandai apakah profil ini memungut pajak pada transaksinya. Tampilan
+     * memakai penanda ini untuk menyembunyikan kolom serta kartu pajak yang
+     * tidak berlaku bagi profil tersebut.
+     *
+     * @return {@code true} bila profil memungut PPh/PPN
+     */
+    public boolean punyaPajak() {
+        return false;
+    }
+
+    /**
      * Menghitung pajak yang berlaku pada satu transaksi.
      *
      * <p>Profil dasar tidak menetapkan tarif sehingga setiap transaksinya

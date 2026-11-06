@@ -44,6 +44,11 @@ public final class ProfileUsaha extends Profile {
         return TIPE;
     }
 
+    @Override
+    public boolean punyaPajak() {
+        return true;
+    }
+
     /**
      * Menghitung pajak yang berlaku pada transaksi profil usaha.
      *

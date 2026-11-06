@@ -19,6 +19,9 @@ import java.util.List;
 /**
  * Panel ringkasan berisi kartu saldo, total uang masuk, total uang keluar,
  * serta total PPN dan PPh yang terkumpul pada profil aktif.
+ *
+ * <p>Kartu pajak hanya ditampilkan bila profil aktif memungut pajak; profil
+ * biasa cukup menampilkan tiga kartu utama beserta keterangan profil.</p>
  */
 public class RingkasanPanel extends JPanel {
 
@@ -35,18 +38,23 @@ public class RingkasanPanel extends JPanel {
     private final JLabel infoJumlah = new JLabel("Belum ada transaksi");
     private final JLabel infoProfil = new JLabel(" ");
 
+    private final JPanel barisKartu = new JPanel();
+    private final JPanel kartuSaldo = buatKartu("SALDO SAAT INI", nilaiSaldo, WARNA_NETRAL);
+    private final JPanel kartuMasuk = buatKartu("TOTAL UANG MASUK", nilaiMasuk, WARNA_MASUK);
+    private final JPanel kartuKeluar = buatKartu("TOTAL UANG KELUAR", nilaiKeluar, WARNA_KELUAR);
+    private final JPanel kartuPpn = buatKartu("TOTAL PPN TERKUMPUL", nilaiPpn, WARNA_PAJAK);
+    private final JPanel kartuPph = buatKartu("TOTAL PPH TERKUMPUL", nilaiPph, WARNA_PAJAK);
+    private final JPanel selKeterangan = new JPanel(new BorderLayout(0, 2));
+
+    /** Mode tata letak terakhir; {@code null} berarti belum pernah ditata. */
+    private Boolean modePajak;
+
     public RingkasanPanel() {
         setLayout(new BorderLayout(0, 8));
         setBorder(BorderFactory.createEmptyBorder(14, 14, 6, 14));
         setOpaque(false);
 
-        JPanel barisKartu = new JPanel(new GridLayout(2, 3, 12, 8));
         barisKartu.setOpaque(false);
-        barisKartu.add(buatKartu("SALDO SAAT INI", nilaiSaldo, WARNA_NETRAL));
-        barisKartu.add(buatKartu("TOTAL UANG MASUK", nilaiMasuk, WARNA_MASUK));
-        barisKartu.add(buatKartu("TOTAL UANG KELUAR", nilaiKeluar, WARNA_KELUAR));
-        barisKartu.add(buatKartu("TOTAL PPN TERKUMPUL", nilaiPpn, WARNA_PAJAK));
-        barisKartu.add(buatKartu("TOTAL PPH TERKUMPUL", nilaiPph, WARNA_PAJAK));
 
         infoJumlah.setFont(infoJumlah.getFont().deriveFont(Font.PLAIN, 12f));
         infoJumlah.setForeground(new Color(0x607D8B));
@@ -54,15 +62,43 @@ public class RingkasanPanel extends JPanel {
         infoProfil.setFont(infoProfil.getFont().deriveFont(Font.PLAIN, 12f));
         infoProfil.setForeground(new Color(0x37474F));
 
-        // Sel kosong pada baris kedua dipakai untuk keterangan jumlah transaksi dan profil.
-        JPanel selKeterangan = new JPanel(new BorderLayout(0, 2));
+        // Sel ini mengisi sel kosong pada baris kartu dengan keterangan jumlah
+        // transaksi dan profil yang sedang aktif.
         selKeterangan.setOpaque(false);
         selKeterangan.setBorder(BorderFactory.createEmptyBorder(6, 8, 6, 8));
         selKeterangan.add(infoJumlah, BorderLayout.NORTH);
         selKeterangan.add(infoProfil, BorderLayout.SOUTH);
-        barisKartu.add(selKeterangan);
 
         add(barisKartu, BorderLayout.CENTER);
+        aturTataLetakKartu(false);
+    }
+
+    /**
+     * Menyusun kartu sesuai kebutuhan profil: profil berpajak memakai dua baris
+     * berisi lima kartu, profil tanpa pajak cukup satu baris berisi tiga kartu
+     * dan keterangan profil sehingga tidak ada ruang kosong yang terbuang.
+     */
+    private void aturTataLetakKartu(boolean adaPajak) {
+        if (modePajak != null && modePajak == adaPajak) {
+            return;
+        }
+        modePajak = adaPajak;
+
+        barisKartu.removeAll();
+        barisKartu.setLayout(adaPajak
+                ? new GridLayout(2, 3, 12, 8)
+                : new GridLayout(1, 4, 12, 8));
+        barisKartu.add(kartuSaldo);
+        barisKartu.add(kartuMasuk);
+        barisKartu.add(kartuKeluar);
+        if (adaPajak) {
+            barisKartu.add(kartuPpn);
+            barisKartu.add(kartuPph);
+        }
+        barisKartu.add(selKeterangan);
+
+        barisKartu.revalidate();
+        barisKartu.repaint();
     }
 
     private static JLabel buatNilaiLabel() {
@@ -94,6 +130,10 @@ public class RingkasanPanel extends JPanel {
      * Menyesuaikan seluruh tampilan ringkasan dengan kondisi buku kas terbaru.
      */
     public void perbarui(BukuKas bukuKas) {
+        Profile profil = bukuKas.getProfilAktif();
+        boolean adaPajak = profil != null && profil.punyaPajak();
+        aturTataLetakKartu(adaPajak);
+
         long saldo = bukuKas.getSaldo();
         nilaiSaldo.setText(Transaksi.formatNominal(saldo));
         nilaiSaldo.setForeground(saldo < 0 ? WARNA_KELUAR : WARNA_MASUK);
@@ -101,15 +141,17 @@ public class RingkasanPanel extends JPanel {
         nilaiMasuk.setText(Transaksi.formatNominal(bukuKas.getTotalMasuk()));
         nilaiKeluar.setText(Transaksi.formatNominal(bukuKas.getTotalKeluar()));
 
-        nilaiPpn.setText(Transaksi.formatNominal(bukuKas.getTotalPpn()));
-        nilaiPph.setText(Transaksi.formatNominal(bukuKas.getTotalPph()));
+        if (adaPajak) {
+            nilaiPpn.setText(Transaksi.formatNominal(bukuKas.getTotalPpn()));
+            nilaiPph.setText(Transaksi.formatNominal(bukuKas.getTotalPph()));
+        }
 
         int jumlah = bukuKas.getJumlahTransaksi();
         infoJumlah.setText(jumlah == 0
                 ? "Belum ada transaksi"
                 : "Total " + jumlah + " transaksi tercatat");
 
-        perbaruiInfoProfil(bukuKas.getProfilAktif());
+        perbaruiInfoProfil(profil);
     }
 
     /**

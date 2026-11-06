@@ -1,5 +1,6 @@
 package org.yuemi.fsi2107.ui;
 
+import org.yuemi.fsi2107.model.Profile;
 import org.yuemi.fsi2107.model.Transaksi;
 import org.yuemi.fsi2107.service.BukuKas;
 
@@ -10,7 +11,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -19,11 +22,21 @@ import java.util.List;
 
 /**
  * Panel tabel yang menampilkan seluruh transaksi beserta tombol penghapusan.
+ *
+ * <p>Kolom PPh, PPN, dan Bersih hanya ditampilkan bila profil aktif memungut
+ * pajak; profil biasa cukup menampilkan nominal transaksinya.</p>
  */
 public class TabelTransaksiPanel extends JPanel {
 
     private static final String[] JUDUL_KOLOM =
             {"No", "Waktu", "Jenis", "Kategori", "Deskripsi", "Nominal", "PPh", "PPN", "Bersih"};
+
+    private static final int[] LEBAR_KOLOM = {40, 120, 100, 100, 220, 120, 110, 100, 120};
+
+    /** Indeks model kolom pajak: PPh, PPN, dan nominal bersih. */
+    private static final int KOLOM_PPH = 6;
+    private static final int KOLOM_PPN = 7;
+    private static final int KOLOM_BERSIH = 8;
 
     private static final Color WARNA_BARIS_MASUK = new Color(0xE8F5E9);
     private static final Color WARNA_BARIS_KELUAR = new Color(0xFFEBEE);
@@ -36,6 +49,9 @@ public class TabelTransaksiPanel extends JPanel {
 
     /** Daftar transaksi yang sedang ditampilkan, sejajar indeks dengan baris tabel. */
     private List<Transaksi> transaksiTampil = new ArrayList<>();
+
+    /** Apakah kolom pajak sedang ditampilkan. */
+    private boolean modePajak;
 
     public TabelTransaksiPanel(BukuKas bukuKas) {
         this.bukuKas = bukuKas;
@@ -62,15 +78,7 @@ public class TabelTransaksiPanel extends JPanel {
         tabel.getTableHeader().setReorderingAllowed(false);
         tabel.setDefaultRenderer(Object.class, new PerenderBaris());
 
-        tabel.getColumnModel().getColumn(0).setPreferredWidth(40);
-        tabel.getColumnModel().getColumn(1).setPreferredWidth(120);
-        tabel.getColumnModel().getColumn(2).setPreferredWidth(100);
-        tabel.getColumnModel().getColumn(3).setPreferredWidth(100);
-        tabel.getColumnModel().getColumn(4).setPreferredWidth(220);
-        tabel.getColumnModel().getColumn(5).setPreferredWidth(120);
-        tabel.getColumnModel().getColumn(6).setPreferredWidth(110);
-        tabel.getColumnModel().getColumn(7).setPreferredWidth(100);
-        tabel.getColumnModel().getColumn(8).setPreferredWidth(120);
+        aturKolomPajak(true);
 
         TombolBerwarna tombolHapus = new TombolBerwarna("Hapus Transaksi Terpilih", new Color(0xC62828));
         tombolHapus.addActionListener(e -> hapusTransaksiTerpilih());
@@ -85,9 +93,38 @@ public class TabelTransaksiPanel extends JPanel {
     }
 
     /**
+     * Menyusun ulang kolom tabel: kolom pajak disertakan hanya bila profil aktif
+     * memungut pajak. Model data tetap sembilan kolom sehingga indeks model tidak
+     * bergeser; hanya column model yang dibangun ulang.
+     */
+    private void aturKolomPajak(boolean adaPajak) {
+        if (modePajak == adaPajak && tabel.getColumnModel().getColumnCount() > 0) {
+            return;
+        }
+        modePajak = adaPajak;
+
+        DefaultTableColumnModel kolom = new DefaultTableColumnModel();
+        for (int i = 0; i < JUDUL_KOLOM.length; i++) {
+            boolean kolomPajak = i == KOLOM_PPH || i == KOLOM_PPN || i == KOLOM_BERSIH;
+            if (kolomPajak && !adaPajak) {
+                continue;
+            }
+            TableColumn tabelKolom = new TableColumn(i);
+            tabelKolom.setHeaderValue(JUDUL_KOLOM[i]);
+            tabelKolom.setPreferredWidth(LEBAR_KOLOM[i]);
+            kolom.addColumn(tabelKolom);
+        }
+        tabel.setColumnModel(kolom);
+        tabel.getTableHeader().setReorderingAllowed(false);
+    }
+
+    /**
      * Menyusun ulang isi tabel berdasarkan data terbaru dari buku kas.
      */
     public void perbarui(BukuKas bukuKas) {
+        Profile profil = bukuKas.getProfilAktif();
+        aturKolomPajak(profil != null && profil.punyaPajak());
+
         long idTerpilih = -1;
         int barisTerpilih = tabel.getSelectedRow();
         if (barisTerpilih >= 0 && barisTerpilih < transaksiTampil.size()) {
