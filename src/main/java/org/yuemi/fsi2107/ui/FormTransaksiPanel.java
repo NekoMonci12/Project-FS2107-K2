@@ -2,6 +2,7 @@ package org.yuemi.fsi2107.ui;
 
 import org.yuemi.fsi2107.model.JenisTransaksi;
 import org.yuemi.fsi2107.model.Kategori;
+import org.yuemi.fsi2107.model.Profile;
 import org.yuemi.fsi2107.service.BukuKas;
 
 import javax.swing.BorderFactory;
@@ -28,6 +29,7 @@ public class FormTransaksiPanel extends JPanel {
     private final JComboBox<Kategori> pilihanKategori = new JComboBox<>();
     private final JTextField isianNominal = new JTextField();
     private final JTextField isianDeskripsi = new JTextField();
+    private final JLabel infoProfil = new JLabel(" ");
 
     public FormTransaksiPanel(BukuKas bukuKas) {
         this.bukuKas = bukuKas;
@@ -72,11 +74,36 @@ public class FormTransaksiPanel extends JPanel {
         gbc.anchor = GridBagConstraints.WEST;
         add(panelTombol, gbc);
 
+        infoProfil.setFont(infoProfil.getFont().deriveFont(java.awt.Font.PLAIN, 12f));
+        infoProfil.setForeground(new Color(0x546E7A));
+        gbc.gridy = baris + 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        add(infoProfil, gbc);
+
         pilihanJenis.addActionListener(e -> perbaruiPilihanKategori());
         perbaruiPilihanKategori();
 
         isianNominal.addActionListener(e -> simpanTransaksi());
         isianDeskripsi.addActionListener(e -> simpanTransaksi());
+
+        bukuKas.tambahPendengar(this::perbaruiInfoProfil);
+        perbaruiInfoProfil(bukuKas);
+    }
+
+    /**
+     * Menampilkan profil yang sedang aktif beserta setelan pajaknya, agar
+     * pengguna mengetahui pajak yang otomatis dipungut.
+     */
+    private void perbaruiInfoProfil(BukuKas bukuKas) {
+        Profile profil = bukuKas.getProfilAktif();
+        if (profil == null) {
+            infoProfil.setText(" ");
+            return;
+        }
+        String tarif = profil.keteranganTarif();
+        infoProfil.setText(tarif.isEmpty()
+                ? "Profil aktif: " + profil.getNama()
+                : "Profil aktif: " + profil.getNama() + " (" + tarif + ")");
     }
 
     private void tambahBaris(GridBagConstraints gbc, int baris, String label, java.awt.Component komponen,

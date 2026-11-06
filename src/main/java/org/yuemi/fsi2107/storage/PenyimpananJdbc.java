@@ -113,6 +113,16 @@ abstract class PenyimpananJdbc implements Penyimpanan {
     protected abstract String perintahTambahKolomProfile();
 
     /**
+     * Perintah SQL untuk menambahkan kolom PPh ke tabel transaksi lama.
+     */
+    protected abstract String perintahTambahKolomPph();
+
+    /**
+     * Perintah SQL untuk menambahkan kolom PPN ke tabel transaksi lama.
+     */
+    protected abstract String perintahTambahKolomPpn();
+
+    /**
      * Memuat driver JDBC bila belum dimuat oleh JVM.
      */
     protected static void muatDriver(String namaDriver) {
@@ -135,6 +145,7 @@ abstract class PenyimpananJdbc implements Penyimpanan {
 
         sisipkanProfileBawaanBilaPerlu();
         tambahKolomProfileBilaBelumAda();
+        tambahKolomPajakBilaBelumAda();
     }
 
     /**
@@ -161,27 +172,48 @@ abstract class PenyimpananJdbc implements Penyimpanan {
      * Transaksi lama otomatis menunjuk profil bawaan dengan id satu.
      */
     private void tambahKolomProfileBilaBelumAda() {
-        if (kolomProfileSudahAda()) {
+        if (kolomSudahAda("profile_id")) {
             return;
         }
-        try (Statement pernyataan = koneksi().createStatement()) {
-            pernyataan.executeUpdate(perintahTambahKolomProfile());
-        } catch (SQLException ex) {
-            throw new DataStorageException(
-                    "Gagal menambahkan kolom profil pada tabel transaksi. " + ex.getMessage(), ex);
+        jalankanPerintahTambahKolom(perintahTambahKolomProfile(),
+                "kolom profil pada tabel transaksi");
+    }
+
+    /**
+     * Menambahkan kolom pajak ke tabel transaksi lama yang belum memilikinya.
+     * Transaksi lama otomatisberisi nilai pajak nol.
+     */
+    private void tambahKolomPajakBilaBelumAda() {
+        if (!kolomSudahAda("pph")) {
+            jalankanPerintahTambahKolom(perintahTambahKolomPph(), "kolom PPh pada tabel transaksi");
+        }
+        if (!kolomSudahAda("ppn")) {
+            jalankanPerintahTambahKolom(perintahTambahKolomPpn(), "kolom PPN pada tabel transaksi");
         }
     }
 
     /**
-     * Mengecek apakah tabel transaksi sudah memiliki kolom profil.
+     * Menjalankan perintah penambahan kolom dan menulis pesan galat yang jelas.
      */
-    private boolean kolomProfileSudahAda() {
+    private void jalankanPerintahTambahKolom(String perintah, String keterangan) {
+        try (Statement pernyataan = koneksi().createStatement()) {
+            pernyataan.executeUpdate(perintah);
+        } catch (SQLException ex) {
+            throw new DataStorageException(
+                    "Gagal menambahkan " + keterangan + ". " + ex.getMessage(), ex);
+        }
+    }
+
+    /**
+     * Mengecek apakah tabel transaksi sudah memiliki sebuah kolom.
+     */
+    private boolean kolomSudahAda(String namaKolom) {
         try {
             DatabaseMetaData metaData = koneksi().getMetaData();
             try (ResultSet kolom = metaData.getColumns(null, null, "transaksi", null)) {
                 while (kolom.next()) {
                     String nama = kolom.getString("COLUMN_NAME");
-                    if (nama != null && nama.equalsIgnoreCase("profile_id")) {
+                    if (nama != null && nama.equalsIgnoreCase(namaKolom)) {
                         return true;
                     }
                 }
@@ -244,7 +276,7 @@ abstract class PenyimpananJdbc implements Penyimpanan {
 
     @Override
     public Transaksi simpan(long profileId, JenisTransaksi jenis, Kategori kategori, String deskripsi,
-                            long nominal, LocalDateTime waktu) {
+                            long nominal, LocalDateTime waktu, long pph, long ppn) {
         try (PreparedStatement pernyataan = koneksi().prepareStatement(
                 perintahInsert(), Statement.RETURN_GENERATED_KEYS)) {
 
@@ -254,10 +286,12 @@ abstract class PenyimpananJdbc implements Penyimpanan {
             pernyataan.setString(4, kategori.name());
             pernyataan.setString(5, deskripsi == null ? "" : deskripsi);
             pernyataan.setLong(6, nominal);
+            pernyataan.setLong(7, pph);
+            pernyataan.setLong(8, ppn);
             pernyataan.executeUpdate();
 
             long id = bacaIdBaru(pernyataan);
-            return new Transaksi(id, profileId, waktu, jenis, kategori, deskripsi, nominal);
+            return new Transaksi(id, profileId, waktu, jenis, kategori, deskripsi, nominal, pph, ppn);
         } catch (SQLException ex) {
             throw new DataStorageException("Gagal menyimpan transaksi ke basis data. " + ex.getMessage(), ex);
         }
@@ -404,7 +438,9 @@ abstract class PenyimpananJdbc implements Penyimpanan {
         Kategori kategori = bacaKategori(baris.getString("kategori"));
         String deskripsi = baris.getString("deskripsi");
         long nominal = baris.getLong("nominal");
-        return new Transaksi(id, profileId, waktu, jenis, kategori, deskripsi, nominal);
+        long pph = baris.getLong("pph");
+        long ppn = baris.getLong("ppn");
+        return new Transaksi(id, profileId, waktu, jenis, kategori, deskripsi, nominal, pph, ppn);
     }
 
     /**

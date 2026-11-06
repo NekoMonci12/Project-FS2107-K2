@@ -18,7 +18,9 @@ CREATE TABLE IF NOT EXISTS transaksi (
     jenis     VARCHAR(20)  NOT NULL,
     kategori  VARCHAR(50)  NOT NULL,
     deskripsi VARCHAR(255),
-    nominal   BIGINT       NOT NULL
+    nominal   BIGINT       NOT NULL,
+    pph       BIGINT       NOT NULL DEFAULT 0,
+    ppn       BIGINT       NOT NULL DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_transaksi_waktu ON transaksi (waktu);

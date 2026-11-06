@@ -23,7 +23,7 @@ import java.util.List;
 public class TabelTransaksiPanel extends JPanel {
 
     private static final String[] JUDUL_KOLOM =
-            {"No", "Waktu", "Jenis", "Kategori", "Deskripsi", "Nominal"};
+            {"No", "Waktu", "Jenis", "Kategori", "Deskripsi", "Nominal", "PPh", "PPN", "Bersih"};
 
     private static final Color WARNA_BARIS_MASUK = new Color(0xE8F5E9);
     private static final Color WARNA_BARIS_KELUAR = new Color(0xFFEBEE);
@@ -66,8 +66,11 @@ public class TabelTransaksiPanel extends JPanel {
         tabel.getColumnModel().getColumn(1).setPreferredWidth(120);
         tabel.getColumnModel().getColumn(2).setPreferredWidth(100);
         tabel.getColumnModel().getColumn(3).setPreferredWidth(100);
-        tabel.getColumnModel().getColumn(4).setPreferredWidth(260);
-        tabel.getColumnModel().getColumn(5).setPreferredWidth(130);
+        tabel.getColumnModel().getColumn(4).setPreferredWidth(220);
+        tabel.getColumnModel().getColumn(5).setPreferredWidth(120);
+        tabel.getColumnModel().getColumn(6).setPreferredWidth(110);
+        tabel.getColumnModel().getColumn(7).setPreferredWidth(100);
+        tabel.getColumnModel().getColumn(8).setPreferredWidth(120);
 
         TombolBerwarna tombolHapus = new TombolBerwarna("Hapus Transaksi Terpilih", new Color(0xC62828));
         tombolHapus.addActionListener(e -> hapusTransaksiTerpilih());
@@ -102,7 +105,10 @@ public class TabelTransaksiPanel extends JPanel {
                     transaksi.getJenis().getLabel(),
                     transaksi.getKategori().getLabel(),
                     transaksi.getDeskripsi(),
-                    transaksi.getNominalTerformat()
+                    Transaksi.formatNominal(transaksi.getNominal()),
+                    Transaksi.formatNominal(transaksi.getPph()),
+                    Transaksi.formatNominal(transaksi.getPpn()),
+                    Transaksi.formatNominal(transaksi.getNominalBersih())
             });
         }
 
@@ -162,7 +168,7 @@ public class TabelTransaksiPanel extends JPanel {
                 komponen.setForeground(masuk ? WARNA_TEKS_MASUK : WARNA_TEKS_KELUAR);
             }
 
-            if (kolom == 0 || kolom == 5) {
+            if (kolom == 0 || kolom >= 5) {
                 setHorizontalAlignment(RIGHT);
             } else {
                 setHorizontalAlignment(LEFT);

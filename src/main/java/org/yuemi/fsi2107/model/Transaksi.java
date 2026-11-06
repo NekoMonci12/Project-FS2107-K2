@@ -24,14 +24,26 @@ public class Transaksi {
     private final Kategori kategori;
     private final String deskripsi;
     private final long nominal;
+    private final long pph;
+    private final long ppn;
 
     public Transaksi(long id, long profileId, JenisTransaksi jenis, Kategori kategori,
                      String deskripsi, long nominal) {
-        this(id, profileId, LocalDateTime.now(), jenis, kategori, deskripsi, nominal);
+        this(id, profileId, LocalDateTime.now(), jenis, kategori, deskripsi, nominal, 0, 0);
+    }
+
+    public Transaksi(long id, long profileId, JenisTransaksi jenis, Kategori kategori,
+                     String deskripsi, long nominal, long pph, long ppn) {
+        this(id, profileId, LocalDateTime.now(), jenis, kategori, deskripsi, nominal, pph, ppn);
     }
 
     public Transaksi(long id, long profileId, LocalDateTime waktu, JenisTransaksi jenis,
                      Kategori kategori, String deskripsi, long nominal) {
+        this(id, profileId, waktu, jenis, kategori, deskripsi, nominal, 0, 0);
+    }
+
+    public Transaksi(long id, long profileId, LocalDateTime waktu, JenisTransaksi jenis,
+                     Kategori kategori, String deskripsi, long nominal, long pph, long ppn) {
         this.id = id;
         this.profileId = profileId;
         this.waktu = Objects.requireNonNull(waktu, "waktu tidak boleh null");
@@ -39,6 +51,8 @@ public class Transaksi {
         this.kategori = Objects.requireNonNull(kategori, "kategori tidak boleh null");
         this.deskripsi = deskripsi == null ? "" : deskripsi.trim();
         this.nominal = nominal;
+        this.pph = pph;
+        this.ppn = ppn;
     }
 
     private static DecimalFormat buatFormatUang() {
@@ -83,16 +97,38 @@ public class Transaksi {
         return nominal;
     }
 
+    /**
+     * PPh yang dipotong dari transaksi ini, dalam rupiah.
+     */
+    public long getPph() {
+        return pph;
+    }
+
+    /**
+     * PPN yang ditambahkan pada pengeluaran, dalam rupiah.
+     */
+    public long getPpn() {
+        return ppn;
+    }
+
+    /**
+     * Nominal setelah pajak diperhitungkan. Uang masuk berkurang karena PPh
+     * dipotong, uang keluar bertambah karena PPN menambah pengeluaran.
+     */
+    public long getNominalBersih() {
+        return isMasuk() ? nominal - pph : nominal + ppn;
+    }
+
     public boolean isMasuk() {
         return jenis == JenisTransaksi.MASUK;
     }
 
     /**
-     * Nilai nominal yang sudah diberi tanda: positif untuk uang masuk,
+     * Nilai nominal bersih yang sudah diberi tanda: positif untuk uang masuk,
      * negatif untuk uang keluar.
      */
     public long getNominalBertanda() {
-        return isMasuk() ? nominal : -nominal;
+        return isMasuk() ? getNominalBersih() : -getNominalBersih();
     }
 
     public String getWaktuTerformat() {

@@ -13,6 +13,8 @@ import javax.swing.UIManager;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
@@ -22,24 +24,29 @@ import java.awt.event.WindowEvent;
  */
 public class MainFrame extends JFrame {
 
+    /** Tinggi minimum area tabel transaksi agar tetap bisa dibaca. */
+    private static final int TINGGI_MINIMUM_TABEL = 170;
+
     private final BukuKas bukuKas;
     private final RingkasanPanel ringkasanPanel;
     private final TabelTransaksiPanel tabelTransaksiPanel;
+    private final JSplitPane pemisah;
+    private final FormTransaksiPanel formTransaksiPanel;
 
     public MainFrame(BukuKas bukuKas, ProfileService profileService) {
         super("Aplikasi Pencatatan Keuangan - Uang Masuk & Uang Keluar");
         this.bukuKas = bukuKas;
 
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        setMinimumSize(new Dimension(760, 560));
+        setMinimumSize(new Dimension(760, 680));
         setLocationRelativeTo(null);
 
         ringkasanPanel = new RingkasanPanel();
         tabelTransaksiPanel = new TabelTransaksiPanel(bukuKas);
-        FormTransaksiPanel formTransaksiPanel = new FormTransaksiPanel(bukuKas);
+        formTransaksiPanel = new FormTransaksiPanel(bukuKas);
         ProfilPanel profilPanel = new ProfilPanel(profileService);
 
-        JSplitPane pemisah = new JSplitPane(JSplitPane.VERTICAL_SPLIT, formTransaksiPanel, tabelTransaksiPanel);
+        pemisah = new JSplitPane(JSplitPane.VERTICAL_SPLIT, formTransaksiPanel, tabelTransaksiPanel);
         pemisah.setResizeWeight(0.0);
         pemisah.setBorder(BorderFactory.createEmptyBorder(0, 14, 14, 14));
         pemisah.setContinuousLayout(true);
@@ -56,13 +63,17 @@ public class MainFrame extends JFrame {
         isi.add(pemisah, BorderLayout.CENTER);
 
         setContentPane(isi);
-        setSize(920, 640);
+        setSize(920, 700);
 
-        pemisah.setDividerLocation(Math.max(180, formTransaksiPanel.getPreferredSize().height));
-
-        // Divider dihitung ulang setelah jendela tampil agar tinggi formulir pas dengan isinya.
-        SwingUtilities.invokeLater(() -> pemisah.setDividerLocation(
-                Math.max(180, formTransaksiPanel.getPreferredSize().height)));
+        // Divider disesuaikan setiap kali jendela berubah ukuran agar tabel
+        // transaksi selalu mendapat ruang minimum.
+        pemisah.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent peristiwa) {
+                aturDivider();
+            }
+        });
+        SwingUtilities.invokeLater(this::aturDivider);
 
         bukuKas.tambahPendengar(this::segarkanTampilan);
 
@@ -79,6 +90,20 @@ public class MainFrame extends JFrame {
                 tutupAplikasi();
             }
         });
+    }
+
+    /**
+     * Menempatkan divider agar formulir pas dengan isinya, tetapi tabel
+     * transaksi tetap mendapat ruang minimum pada jendela yang rendah.
+     */
+    private void aturDivider() {
+        int tinggiSplit = pemisah.getHeight();
+        if (tinggiSplit <= 0) {
+            return;
+        }
+        int tinggiFormulir = Math.max(180, formTransaksiPanel.getPreferredSize().height);
+        int batasAtas = tinggiSplit - TINGGI_MINIMUM_TABEL;
+        pemisah.setDividerLocation(Math.max(120, Math.min(tinggiFormulir, batasAtas)));
     }
 
     private void segarkanTampilan(BukuKas bukuKas) {

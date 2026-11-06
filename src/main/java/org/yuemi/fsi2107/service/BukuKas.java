@@ -2,6 +2,7 @@ package org.yuemi.fsi2107.service;
 
 import org.yuemi.fsi2107.model.JenisTransaksi;
 import org.yuemi.fsi2107.model.Kategori;
+import org.yuemi.fsi2107.model.PajakTransaksi;
 import org.yuemi.fsi2107.model.Profile;
 import org.yuemi.fsi2107.model.Transaksi;
 import org.yuemi.fsi2107.storage.Penyimpanan;
@@ -82,8 +83,10 @@ public class BukuKas {
         if (profilAktif == null) {
             throw new IllegalStateException("Belum ada profil aktif yang dipilih.");
         }
+
+        PajakTransaksi pajak = profilAktif.hitungPajak(jenis, nominal);
         Transaksi transaksi = penyimpanan.simpan(profilAktif.getId(), jenis, kategori, deskripsi,
-                nominal, LocalDateTime.now());
+                nominal, LocalDateTime.now(), pajak.pph(), pajak.ppn());
         daftarTransaksi.add(transaksi);
         beriTahuPendengar();
         return transaksi;
@@ -119,17 +122,42 @@ public class BukuKas {
         return daftarTransaksi.size();
     }
 
+    /**
+     * Total uang masuk setelah pajak dipotong.
+     */
     public long getTotalMasuk() {
         return daftarTransaksi.stream()
                 .filter(Transaksi::isMasuk)
-                .mapToLong(Transaksi::getNominal)
+                .mapToLong(Transaksi::getNominalBersih)
                 .sum();
     }
 
+    /**
+     * Total uang keluar setelah PPN ditambahkan ke biaya.
+     */
     public long getTotalKeluar() {
         return daftarTransaksi.stream()
                 .filter(transaksi -> !transaksi.isMasuk())
-                .mapToLong(Transaksi::getNominal)
+                .mapToLong(Transaksi::getNominalBersih)
+                .sum();
+    }
+
+    /**
+     * Total PPh yang dipotong dari seluruh transaksi profil aktif.
+     */
+    public long getTotalPph() {
+        return daftarTransaksi.stream()
+                .mapToLong(Transaksi::getPph)
+                .sum();
+    }
+
+    /**
+     * Total PPN dari seluruh transaksi profil aktif, baik yang dipotong dari
+     * uang masuk maupun yang ditambahkan pada uang keluar.
+     */
+    public long getTotalPpn() {
+        return daftarTransaksi.stream()
+                .mapToLong(Transaksi::getPpn)
                 .sum();
     }
 

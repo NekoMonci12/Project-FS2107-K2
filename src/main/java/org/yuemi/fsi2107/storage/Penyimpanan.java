@@ -35,9 +35,12 @@ public interface Penyimpanan extends AutoCloseable {
     /**
      * Menyimpan satu transaksi baru pada sebuah profil dan mengembalikan objek
      * transaksi beserta id yang diberikan basis data.
+     *
+     * @param pph PPh yang dipotong dari transaksi
+     * @param ppn PPN yang dipotong atau ditambahkan
      */
     Transaksi simpan(long profileId, JenisTransaksi jenis, Kategori kategori, String deskripsi,
-                     long nominal, LocalDateTime waktu);
+                     long nominal, LocalDateTime waktu, long pph, long ppn);
 
     /**
      * Menyimpan satu profil baru dan mengembalikan objek profil beserta id yang

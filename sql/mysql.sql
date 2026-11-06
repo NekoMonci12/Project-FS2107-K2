@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS transaksi (
     kategori  VARCHAR(50)  NOT NULL,
     deskripsi VARCHAR(255),
     nominal   BIGINT       NOT NULL,
+    pph       BIGINT       NOT NULL DEFAULT 0,
+    ppn       BIGINT       NOT NULL DEFAULT 0,
     PRIMARY KEY (id),
     INDEX idx_transaksi_waktu (waktu),
     INDEX idx_transaksi_profile (profile_id),

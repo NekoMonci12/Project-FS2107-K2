@@ -1,6 +1,7 @@
 package org.yuemi.fsi2107.model;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -8,8 +9,8 @@ import java.util.Locale;
  * Profil khusus untuk pembukuan usaha, lengkap dengan tarif PPh dan PPN.
  *
  * <p>Tarif disimpan dalam satuan persen, misalnya {@code 0.5} berarti 0,5%.
- * Perkiraan pajak dihitung dari total uang masuk profil, yaitu dasar
- * penyerahan yang menjadi objek PPN dan PPh final UMKM.</p>
+ * Setiap transaksi profil ini dipungut pajak: PPh dipotong dari uang masuk
+ * sedangkan PPN ditambahkan pada uang keluar.</p>
  */
 public final class ProfileUsaha extends Profile {
 
@@ -44,31 +45,40 @@ public final class ProfileUsaha extends Profile {
     }
 
     /**
-     * Perkiraan PPN dari total uang masuk profil.
+     * Menghitung pajak yang berlaku pada transaksi profil usaha.
+     *
+     * <p>PPh hanya berlaku pada uang masuk dan dipotong dari pemasukan,
+     * sedangkan PPN hanya berlaku pada uang keluar dan menambah pengeluaran.</p>
      */
-    public long hitungPpn(long totalMasuk) {
-        return hitungPajak(totalMasuk, tarifPpn);
-    }
-
-    /**
-     * Perkiraan PPh dari total uang masuk profil.
-     */
-    public long hitungPph(long totalMasuk) {
-        return hitungPajak(totalMasuk, tarifPph);
+    @Override
+    public PajakTransaksi hitungPajak(JenisTransaksi jenis, long nominal) {
+        if (jenis == JenisTransaksi.KELUAR) {
+            long ppn = hitungPajakNominal(nominal, tarifPpn);
+            return new PajakTransaksi(0, ppn, nominal + ppn);
+        }
+        long pph = hitungPajakNominal(nominal, tarifPph);
+        return new PajakTransaksi(pph, 0, nominal - pph);
     }
 
     @Override
-    public List<String> infoTambahan(long totalMasuk, long totalKeluar) {
-        return List.of(
-                "PPN " + formatPersen(tarifPpn) + ": " + Transaksi.formatNominal(hitungPpn(totalMasuk)),
-                "PPh " + formatPersen(tarifPph) + ": " + Transaksi.formatNominal(hitungPph(totalMasuk)));
+    public String keteranganTarif() {
+        return "PPh " + formatPersen(tarifPph) + " (masuk), PPN "
+                + formatPersen(tarifPpn) + " (keluar)";
+    }
+
+    @Override
+    public List<String> infoTambahan() {
+        List<String> baris = new ArrayList<>(super.infoTambahan());
+        baris.add("PPh " + formatPersen(tarifPph) + " dipotong dari uang masuk, PPN "
+                + formatPersen(tarifPpn) + " ditambahkan pada uang keluar.");
+        return List.copyOf(baris);
     }
 
     /**
      * Menghitung nilai pajak dalam rupiah penuh lalu dibulatkan ke rupiah terdekat.
      */
-    private static long hitungPajak(long totalMasuk, double tarif) {
-        return Math.round(totalMasuk * tarif / 100.0);
+    private static long hitungPajakNominal(long nominal, double tarif) {
+        return Math.round(nominal * tarif / 100.0);
     }
 
     /**

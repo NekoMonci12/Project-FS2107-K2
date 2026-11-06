@@ -35,15 +35,39 @@ public abstract class Profile {
 
     /**
      * Baris informasi tambahan yang ditampilkan pada ringkasan, misalnya
-     * perkiraan pajak untuk profil usaha. Profil yang tidak punya informasi
-     * khusus tidak menambahkan apa pun.
+     * catatan profil dan setelan pajak yang berlaku. Profil yang tidak punya
+     * informasi khusus tidak menambahkan apa pun.
      *
-     * @param totalMasuk total uang masuk profil aktif
-     * @param totalKeluar total uang keluar profil aktif
      * @return daftar baris informasi, kosong bila tidak ada
      */
-    public List<String> infoTambahan(long totalMasuk, long totalKeluar) {
-        return List.of();
+    public List<String> infoTambahan() {
+        if (catatan.isEmpty()) {
+            return List.of();
+        }
+        return List.of("Catatan: " + catatan);
+    }
+
+    /**
+     * Keterangan singkat setelan pajak profil, dipakai pada formulir transaksi.
+     * Profil tanpa setelan pajak mengembalikan teks kosong.
+     */
+    public String keteranganTarif() {
+        return "";
+    }
+
+    /**
+     * Menghitung pajak yang berlaku pada satu transaksi.
+     *
+     * <p>Profil dasar tidak menetapkan tarif sehingga setiap transaksinya
+     * bebas pajak. Profil khusus menimpa method ini untuk memotong PPh dari
+     * uang masuk serta menambah PPN pada uang keluar.</p>
+     *
+     * @param jenis   jenis transaksi
+     * @param nominal nominal sebelum pajak
+     * @return nilai pajak dan nominal bersih transaksi
+     */
+    public PajakTransaksi hitungPajak(JenisTransaksi jenis, long nominal) {
+        return PajakTransaksi.tanpaPajak(nominal);
     }
 
     public long getId() {

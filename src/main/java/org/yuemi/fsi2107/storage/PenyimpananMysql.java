@@ -24,6 +24,8 @@ public class PenyimpananMysql extends PenyimpananJdbc {
                     + "kategori VARCHAR(50) NOT NULL, "
                     + "deskripsi VARCHAR(255), "
                     + "nominal BIGINT NOT NULL, "
+                    + "pph BIGINT NOT NULL DEFAULT 0, "
+                    + "ppn BIGINT NOT NULL DEFAULT 0, "
                     + "PRIMARY KEY (id))";
 
     private static final String BUAT_TABEL_PROFILE =
@@ -38,8 +40,8 @@ public class PenyimpananMysql extends PenyimpananJdbc {
                     + "PRIMARY KEY (id))";
 
     private static final String INSERT_TRANSAKSI =
-            "INSERT INTO transaksi (profile_id, waktu, jenis, kategori, deskripsi, nominal) "
-                    + "VALUES (?, ?, ?, ?, ?, ?)";
+            "INSERT INTO transaksi (profile_id, waktu, jenis, kategori, deskripsi, nominal, pph, ppn) "
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
     private static final String INSERT_PROFILE =
             "INSERT INTO profile (tipe, nama, catatan, dibuat_pada, tarif_pph, tarif_ppn) "
@@ -50,7 +52,7 @@ public class PenyimpananMysql extends PenyimpananJdbc {
                     + "VALUES (1, 'UMUM', ?, ?, ?)";
 
     private static final String PILIH_SEMUA_TRANSAKSI =
-            "SELECT id, profile_id, waktu, jenis, kategori, deskripsi, nominal "
+            "SELECT id, profile_id, waktu, jenis, kategori, deskripsi, nominal, pph, ppn "
                     + "FROM transaksi WHERE profile_id = ? ORDER BY id";
 
     private static final String PILIH_SEMUA_PROFILE =
@@ -65,6 +67,12 @@ public class PenyimpananMysql extends PenyimpananJdbc {
 
     private static final String TAMBAH_KOLOM_PROFILE =
             "ALTER TABLE transaksi ADD COLUMN profile_id BIGINT NOT NULL DEFAULT 1";
+
+    private static final String TAMBAH_KOLOM_PPH =
+            "ALTER TABLE transaksi ADD COLUMN pph BIGINT NOT NULL DEFAULT 0";
+
+    private static final String TAMBAH_KOLOM_PPN =
+            "ALTER TABLE transaksi ADD COLUMN ppn BIGINT NOT NULL DEFAULT 0";
 
     private static final Pattern POLA_NAMA_DATABASE =
             Pattern.compile("jdbc:mysql://[^/]+/([^?/?]+).*", Pattern.CASE_INSENSITIVE);
@@ -182,5 +190,15 @@ public class PenyimpananMysql extends PenyimpananJdbc {
     @Override
     protected String perintahTambahKolomProfile() {
         return TAMBAH_KOLOM_PROFILE;
+    }
+
+    @Override
+    protected String perintahTambahKolomPph() {
+        return TAMBAH_KOLOM_PPH;
+    }
+
+    @Override
+    protected String perintahTambahKolomPpn() {
+        return TAMBAH_KOLOM_PPN;
     }
 }
