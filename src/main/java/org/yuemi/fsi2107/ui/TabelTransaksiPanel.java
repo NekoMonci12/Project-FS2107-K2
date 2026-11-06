@@ -4,7 +4,6 @@ import org.yuemi.fsi2107.model.Transaksi;
 import org.yuemi.fsi2107.service.BukuKas;
 
 import javax.swing.BorderFactory;
-import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -15,7 +14,6 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.FlowLayout;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -71,12 +69,13 @@ public class TabelTransaksiPanel extends JPanel {
         tabel.getColumnModel().getColumn(4).setPreferredWidth(260);
         tabel.getColumnModel().getColumn(5).setPreferredWidth(130);
 
-        JButton tombolHapus = new JButton("Hapus Transaksi Terpilih");
+        TombolBerwarna tombolHapus = new TombolBerwarna("Hapus Transaksi Terpilih", new Color(0xC62828));
         tombolHapus.addActionListener(e -> hapusTransaksiTerpilih());
 
-        JPanel panelBawah = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        JPanel panelBawah = new JPanel(new BorderLayout(8, 0));
         panelBawah.setOpaque(false);
-        panelBawah.add(tombolHapus);
+        panelBawah.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        panelBawah.add(tombolHapus, BorderLayout.EAST);
 
         add(new JScrollPane(tabel), BorderLayout.CENTER);
         add(panelBawah, BorderLayout.SOUTH);

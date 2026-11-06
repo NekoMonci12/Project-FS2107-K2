@@ -5,13 +5,13 @@ import org.yuemi.fsi2107.model.Kategori;
 import org.yuemi.fsi2107.service.BukuKas;
 
 import javax.swing.BorderFactory;
-import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import java.awt.Color;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -51,22 +51,25 @@ public class FormTransaksiPanel extends JPanel {
         tambahBaris(gbc, baris++, "Nominal (Rp)", isianNominal, 1.0);
         tambahBaris(gbc, baris++, "Deskripsi", isianDeskripsi, 1.0);
 
-        JButton tombolTambah = new TombolBerwarna("Tambah Transaksi", new Color(0x2E7D32));
+        TombolBerwarna tombolTambah = new TombolBerwarna("Tambah Transaksi", new Color(0x2E7D32));
         tombolTambah.addActionListener(e -> simpanTransaksi());
 
-        JButton tombolReset = new JButton("Reset");
+        TombolBerwarna tombolReset = new TombolBerwarna("Reset", new Color(0x607D8B),
+                TombolBerwarna.Gaya.GARIS);
         tombolReset.addActionListener(e -> bersihkanForm());
 
-        JPanel panelTombol = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 0));
+        JPanel panelTombol = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         panelTombol.setOpaque(false);
+        panelTombol.setBorder(BorderFactory.createEmptyBorder(6, 0, 0, 0));
         panelTombol.add(tombolTambah);
         panelTombol.add(tombolReset);
 
         gbc.gridx = 0;
         gbc.gridy = baris;
-        gbc.gridwidth = 3;
+        gbc.gridwidth = 2;
         gbc.weightx = 0;
         gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.WEST;
         add(panelTombol, gbc);
 
         pilihanJenis.addActionListener(e -> perbaruiPilihanKategori());

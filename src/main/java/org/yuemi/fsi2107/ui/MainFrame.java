@@ -38,7 +38,6 @@ public class MainFrame extends JFrame {
         JSplitPane pemisah = new JSplitPane(JSplitPane.VERTICAL_SPLIT, formTransaksiPanel, tabelTransaksiPanel);
         pemisah.setResizeWeight(0.0);
         pemisah.setBorder(BorderFactory.createEmptyBorder(0, 14, 14, 14));
-        pemisah.setDividerLocation(210);
         pemisah.setContinuousLayout(true);
 
         JPanel isi = new JPanel(new BorderLayout());
@@ -48,6 +47,12 @@ public class MainFrame extends JFrame {
 
         setContentPane(isi);
         setSize(920, 640);
+
+        pemisah.setDividerLocation(Math.max(180, formTransaksiPanel.getPreferredSize().height));
+
+        // Divider dihitung ulang setelah jendela tampil agar tinggi formulir pas dengan isinya.
+        SwingUtilities.invokeLater(() -> pemisah.setDividerLocation(
+                Math.max(180, formTransaksiPanel.getPreferredSize().height)));
 
         bukuKas.tambahPendengar(this::segarkanTampilan);
         segarkanTampilan(bukuKas);
