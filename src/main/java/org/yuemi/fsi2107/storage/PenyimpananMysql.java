@@ -8,16 +8,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Penyimpanan transaksi pada server MySQL.
+ * Penyimpanan transaksi dan profil pada server MySQL.
  *
  * <p>Bila database yang dituju belum ada, database tersebut dibuat otomatis
  * pada koneksi pertama.</p>
  */
 public class PenyimpananMysql extends PenyimpananJdbc {
 
-    private static final String BUAT_TABEL =
+    private static final String BUAT_TABEL_TRANSAKSI =
             "CREATE TABLE IF NOT EXISTS transaksi ("
                     + "id BIGINT NOT NULL AUTO_INCREMENT, "
+                    + "profile_id BIGINT NOT NULL DEFAULT 1, "
                     + "waktu VARCHAR(32) NOT NULL, "
                     + "jenis VARCHAR(20) NOT NULL, "
                     + "kategori VARCHAR(50) NOT NULL, "
@@ -25,11 +26,45 @@ public class PenyimpananMysql extends PenyimpananJdbc {
                     + "nominal BIGINT NOT NULL, "
                     + "PRIMARY KEY (id))";
 
-    private static final String INSERT_TRANSAKSI =
-            "INSERT INTO transaksi (waktu, jenis, kategori, deskripsi, nominal) VALUES (?, ?, ?, ?, ?)";
+    private static final String BUAT_TABEL_PROFILE =
+            "CREATE TABLE IF NOT EXISTS profile ("
+                    + "id BIGINT NOT NULL AUTO_INCREMENT, "
+                    + "tipe VARCHAR(20) NOT NULL DEFAULT 'UMUM', "
+                    + "nama VARCHAR(50) NOT NULL, "
+                    + "catatan VARCHAR(255), "
+                    + "dibuat_pada VARCHAR(32) NOT NULL, "
+                    + "tarif_pph DECIMAL(5,2), "
+                    + "tarif_ppn DECIMAL(5,2), "
+                    + "PRIMARY KEY (id))";
 
-    private static final String PILIH_SEMUA =
-            "SELECT id, waktu, jenis, kategori, deskripsi, nominal FROM transaksi ORDER BY id";
+    private static final String INSERT_TRANSAKSI =
+            "INSERT INTO transaksi (profile_id, waktu, jenis, kategori, deskripsi, nominal) "
+                    + "VALUES (?, ?, ?, ?, ?, ?)";
+
+    private static final String INSERT_PROFILE =
+            "INSERT INTO profile (tipe, nama, catatan, dibuat_pada, tarif_pph, tarif_ppn) "
+                    + "VALUES (?, ?, ?, ?, ?, ?)";
+
+    private static final String INSERT_PROFILE_BAWAAN =
+            "INSERT INTO profile (id, tipe, nama, catatan, dibuat_pada) "
+                    + "VALUES (1, 'UMUM', ?, ?, ?)";
+
+    private static final String PILIH_SEMUA_TRANSAKSI =
+            "SELECT id, profile_id, waktu, jenis, kategori, deskripsi, nominal "
+                    + "FROM transaksi WHERE profile_id = ? ORDER BY id";
+
+    private static final String PILIH_SEMUA_PROFILE =
+            "SELECT id, tipe, nama, catatan, dibuat_pada, tarif_pph, tarif_ppn "
+                    + "FROM profile ORDER BY id";
+
+    private static final String HAPUS_PROFILE =
+            "DELETE FROM profile WHERE id = ?";
+
+    private static final String HAPUS_TRANSAKSI_PROFILE =
+            "DELETE FROM transaksi WHERE profile_id = ?";
+
+    private static final String TAMBAH_KOLOM_PROFILE =
+            "ALTER TABLE transaksi ADD COLUMN profile_id BIGINT NOT NULL DEFAULT 1";
 
     private static final Pattern POLA_NAMA_DATABASE =
             Pattern.compile("jdbc:mysql://[^/]+/([^?/?]+).*", Pattern.CASE_INSENSITIVE);
@@ -101,7 +136,12 @@ public class PenyimpananMysql extends PenyimpananJdbc {
 
     @Override
     protected String perintahBuatTabel() {
-        return BUAT_TABEL;
+        return BUAT_TABEL_TRANSAKSI;
+    }
+
+    @Override
+    protected String perintahBuatTabelProfile() {
+        return BUAT_TABEL_PROFILE;
     }
 
     @Override
@@ -110,7 +150,37 @@ public class PenyimpananMysql extends PenyimpananJdbc {
     }
 
     @Override
+    protected String perintahSisipProfile() {
+        return INSERT_PROFILE;
+    }
+
+    @Override
+    protected String perintahSisipProfileBawaan() {
+        return INSERT_PROFILE_BAWAAN;
+    }
+
+    @Override
     protected String perintahPilihSemua() {
-        return PILIH_SEMUA;
+        return PILIH_SEMUA_TRANSAKSI;
+    }
+
+    @Override
+    protected String perintahPilihSemuaProfile() {
+        return PILIH_SEMUA_PROFILE;
+    }
+
+    @Override
+    protected String perintahHapusProfile() {
+        return HAPUS_PROFILE;
+    }
+
+    @Override
+    protected String perintahHapusTransaksiProfile() {
+        return HAPUS_TRANSAKSI_PROFILE;
+    }
+
+    @Override
+    protected String perintahTambahKolomProfile() {
+        return TAMBAH_KOLOM_PROFILE;
     }
 }

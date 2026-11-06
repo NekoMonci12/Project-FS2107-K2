@@ -2,6 +2,7 @@ package org.yuemi.fsi2107.service;
 
 import org.yuemi.fsi2107.model.JenisTransaksi;
 import org.yuemi.fsi2107.model.Kategori;
+import org.yuemi.fsi2107.model.Profile;
 import org.yuemi.fsi2107.model.Transaksi;
 import org.yuemi.fsi2107.storage.Penyimpanan;
 
@@ -26,6 +27,9 @@ public class BukuKas {
     private final List<Consumer<BukuKas>> pendengar = new ArrayList<>();
     private final Penyimpanan penyimpanan;
 
+    /** Profil pemilik transaksi yang sedang ditampilkan. */
+    private Profile profilAktif;
+
     /**
      * Menyusun buku kas dan memuat seluruh transaksi yang sudah tersimpan.
      *
@@ -34,7 +38,31 @@ public class BukuKas {
     public BukuKas(Penyimpanan penyimpanan) {
         this.penyimpanan = Objects.requireNonNull(penyimpanan, "penyimpanan tidak boleh null");
         this.penyimpanan.siapkan();
+    }
+
+    /**
+     * Mengaitkan buku kas dengan profil yang sedang aktif lalu memuat
+     * transaksi milik profil tersebut.
+     *
+     * @param profil profil pemilik transaksi
+     */
+    public void setProfilAktif(Profile profil) {
+        if (profil == null) {
+            return;
+        }
+        if (profilAktif != null && profilAktif.getId() == profil.getId()) {
+            return;
+        }
+        profilAktif = profil;
         muatDariPenyimpanan();
+        beriTahuPendengar();
+    }
+
+    /**
+     * Profil pemilik transaksi yang sedang ditampilkan.
+     */
+    public Profile getProfilAktif() {
+        return profilAktif;
     }
 
     /**
@@ -51,7 +79,11 @@ public class BukuKas {
             throw new IllegalArgumentException("Nominal harus lebih besar dari nol");
         }
 
-        Transaksi transaksi = penyimpanan.simpan(jenis, kategori, deskripsi, nominal, LocalDateTime.now());
+        if (profilAktif == null) {
+            throw new IllegalStateException("Belum ada profil aktif yang dipilih.");
+        }
+        Transaksi transaksi = penyimpanan.simpan(profilAktif.getId(), jenis, kategori, deskripsi,
+                nominal, LocalDateTime.now());
         daftarTransaksi.add(transaksi);
         beriTahuPendengar();
         return transaksi;
@@ -74,7 +106,9 @@ public class BukuKas {
      */
     private void muatDariPenyimpanan() {
         daftarTransaksi.clear();
-        daftarTransaksi.addAll(penyimpanan.muatSemua());
+        if (profilAktif != null) {
+            daftarTransaksi.addAll(penyimpanan.muatSemua(profilAktif.getId()));
+        }
     }
 
     public List<Transaksi> getDaftarTransaksi() {

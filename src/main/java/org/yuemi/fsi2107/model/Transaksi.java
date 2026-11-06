@@ -18,19 +18,22 @@ public class Transaksi {
     private static final DecimalFormat FORMAT_UANG = buatFormatUang();
 
     private final long id;
+    private final long profileId;
     private final LocalDateTime waktu;
     private final JenisTransaksi jenis;
     private final Kategori kategori;
     private final String deskripsi;
     private final long nominal;
 
-    public Transaksi(long id, JenisTransaksi jenis, Kategori kategori, String deskripsi, long nominal) {
-        this(id, LocalDateTime.now(), jenis, kategori, deskripsi, nominal);
+    public Transaksi(long id, long profileId, JenisTransaksi jenis, Kategori kategori,
+                     String deskripsi, long nominal) {
+        this(id, profileId, LocalDateTime.now(), jenis, kategori, deskripsi, nominal);
     }
 
-    public Transaksi(long id, LocalDateTime waktu, JenisTransaksi jenis,
+    public Transaksi(long id, long profileId, LocalDateTime waktu, JenisTransaksi jenis,
                      Kategori kategori, String deskripsi, long nominal) {
         this.id = id;
+        this.profileId = profileId;
         this.waktu = Objects.requireNonNull(waktu, "waktu tidak boleh null");
         this.jenis = Objects.requireNonNull(jenis, "jenis tidak boleh null");
         this.kategori = Objects.requireNonNull(kategori, "kategori tidak boleh null");
@@ -51,6 +54,13 @@ public class Transaksi {
 
     public long getId() {
         return id;
+    }
+
+    /**
+     * Identitas profil pemilik transaksi ini.
+     */
+    public long getProfileId() {
+        return profileId;
     }
 
     public LocalDateTime getWaktu() {

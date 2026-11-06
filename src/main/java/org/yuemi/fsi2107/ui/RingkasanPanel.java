@@ -1,5 +1,6 @@
 package org.yuemi.fsi2107.ui;
 
+import org.yuemi.fsi2107.model.Profile;
 import org.yuemi.fsi2107.model.Transaksi;
 import org.yuemi.fsi2107.service.BukuKas;
 
@@ -13,6 +14,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.util.List;
 
 /**
  * Panel ringkasan berisi tiga kartu: saldo, total uang masuk, dan total uang keluar.
@@ -27,6 +29,7 @@ public class RingkasanPanel extends JPanel {
     private final JLabel nilaiMasuk = buatNilaiLabel();
     private final JLabel nilaiKeluar = buatNilaiLabel();
     private final JLabel infoJumlah = new JLabel("Belum ada transaksi");
+    private final JLabel infoProfil = new JLabel(" ");
 
     public RingkasanPanel() {
         setLayout(new BorderLayout(0, 8));
@@ -43,8 +46,16 @@ public class RingkasanPanel extends JPanel {
         infoJumlah.setForeground(new Color(0x607D8B));
         infoJumlah.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
 
+        infoProfil.setFont(infoProfil.getFont().deriveFont(Font.PLAIN, 12f));
+        infoProfil.setForeground(new Color(0x37474F));
+
+        JPanel panelInformasi = new JPanel(new BorderLayout());
+        panelInformasi.setOpaque(false);
+        panelInformasi.add(infoJumlah, BorderLayout.NORTH);
+        panelInformasi.add(infoProfil, BorderLayout.SOUTH);
+
         add(barisKartu, BorderLayout.CENTER);
-        add(infoJumlah, BorderLayout.SOUTH);
+        add(panelInformasi, BorderLayout.SOUTH);
     }
 
     private static JLabel buatNilaiLabel() {
@@ -87,5 +98,20 @@ public class RingkasanPanel extends JPanel {
         infoJumlah.setText(jumlah == 0
                 ? "Belum ada transaksi"
                 : "Total " + jumlah + " transaksi tercatat");
+
+        perbaruiInfoProfil(bukuKas.getProfilAktif(), bukuKas.getTotalMasuk(), bukuKas.getTotalKeluar());
+    }
+
+    /**
+     * Menampilkan informasi tambahan milik profil aktif, misalnya perkiraan pajak
+     * pada profil usaha. Profil tanpa informasi khusus menampilkan baris kosong.
+     */
+    private void perbaruiInfoProfil(Profile profil, long totalMasuk, long totalKeluar) {
+        if (profil == null) {
+            infoProfil.setText(" ");
+            return;
+        }
+        List<String> baris = profil.infoTambahan(totalMasuk, totalKeluar);
+        infoProfil.setText(baris.isEmpty() ? " " : String.join("   |   ", baris));
     }
 }

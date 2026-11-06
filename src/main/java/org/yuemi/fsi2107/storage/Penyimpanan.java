@@ -2,13 +2,14 @@ package org.yuemi.fsi2107.storage;
 
 import org.yuemi.fsi2107.model.JenisTransaksi;
 import org.yuemi.fsi2107.model.Kategori;
+import org.yuemi.fsi2107.model.Profile;
 import org.yuemi.fsi2107.model.Transaksi;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Kontrak lapisan penyimpanan data transaksi.
+ * Kontrak lapisan penyimpanan data transaksi dan profil.
  *
  * <p>Perintah SQL berbeda antar basis data, namun seluruh aplikasi
  * hanya mengenal antarmuka ini sehingga berganti backend tidak menyentuh
@@ -22,22 +23,39 @@ public interface Penyimpanan extends AutoCloseable {
     void siapkan();
 
     /**
-     * Membaca seluruh transaksi yang tersimpan.
+     * Membaca seluruh transaksi milik sebuah profil.
      */
-    List<Transaksi> muatSemua();
+    List<Transaksi> muatSemua(long profileId);
 
     /**
-     * Menyimpan satu transaksi baru dan mengembalikan objek transaksi
-     * beserta id yang diberikan basis data.
+     * Membaca seluruh profil yang tersimpan.
      */
-    Transaksi simpan(JenisTransaksi jenis, Kategori kategori, String deskripsi,
+    List<Profile> muatSemuaProfile();
+
+    /**
+     * Menyimpan satu transaksi baru pada sebuah profil dan mengembalikan objek
+     * transaksi beserta id yang diberikan basis data.
+     */
+    Transaksi simpan(long profileId, JenisTransaksi jenis, Kategori kategori, String deskripsi,
                      long nominal, LocalDateTime waktu);
 
     /**
-     * Menghapus transaksi berdasarkan id. Mengembalikan {@code true} bila
+     * Menyimpan satu profil baru dan mengembalikan objek profil beserta id yang
+     * diberikan basis data.
+     */
+    Profile simpanProfile(Profile profile);
+
+    /**
+     * Menghapus satu transaksi berdasarkan id. Mengembalikan {@code true} bila
      * ada transaksi yang terhapus.
      */
     boolean hapus(long id);
+
+    /**
+     * Menghapus sebuah profil beserta seluruh transaksinya.
+     * Mengembalikan {@code true} bila ada profil yang terhapus.
+     */
+    boolean hapusProfile(long id);
 
     /**
      * Melepaskan seluruh sumber daya yang dipakai penyimpanan.
