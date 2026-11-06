@@ -12,7 +12,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -52,11 +51,7 @@ public class FormTransaksiPanel extends JPanel {
         tambahBaris(gbc, baris++, "Nominal (Rp)", isianNominal, 1.0);
         tambahBaris(gbc, baris++, "Deskripsi", isianDeskripsi, 1.0);
 
-        JButton tombolTambah = new JButton("Tambah Transaksi");
-        tombolTambah.setFont(tombolTambah.getFont().deriveFont(Font.BOLD));
-        tombolTambah.setBackground(new Color(0x2E7D32));
-        tombolTambah.setForeground(Color.WHITE);
-        tombolTambah.setFocusPainted(false);
+        JButton tombolTambah = new TombolBerwarna("Tambah Transaksi", new Color(0x2E7D32));
         tombolTambah.addActionListener(e -> simpanTransaksi());
 
         JButton tombolReset = new JButton("Reset");
